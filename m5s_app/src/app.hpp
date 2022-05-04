@@ -9,7 +9,6 @@
 #include <gob_macro.hpp>
 #include <gob_app.hpp>
 #include <gob_singleton.hpp>
-#include <gob_m5s_clock.hpp>
 #include <lgfx/gob_lgfx.hpp>
 #include <array>
 
@@ -19,7 +18,6 @@
 class LGFX;
 #endif
 
-//using AppClock = goblib::m5s::esp_clock;
 using AppClock = std::chrono::steady_clock;
 
 // Maximum frane per second (best effort)
