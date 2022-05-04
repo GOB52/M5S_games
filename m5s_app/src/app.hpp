@@ -1,5 +1,6 @@
 /*!
   m5s_app
+  @brief Application class sample
   @sa https://github.com/lovyan03/LovyanGFX/tree/master/examples/Sprite/MovingIcons
 */
 #ifndef M5S_APP_HPP
@@ -18,10 +19,11 @@
 class LGFX;
 #endif
 
-using AppClock = goblib::m5s::esp_clock;
+//using AppClock = goblib::m5s::esp_clock;
+using AppClock = std::chrono::steady_clock;
 
 // Maximum frane per second (best effort)
-#define MAX_FPS (60)
+#define MAX_FPS (30)
 
 class m5s_app : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singleton<m5s_app>
 {
