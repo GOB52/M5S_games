@@ -101,7 +101,7 @@ std::vector<StageData> stage =
         0,6,7,8,2,3,0,4,1,5,6,7,0,
         0,7,8,2,3,4,0,1,5,6,7,8,0,
     },
-#if 0
+#if 1
     {
         0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -290,7 +290,7 @@ void Breakout::phaseGame()
         e.update(_paddle, _bricks);
     }
 
-#if 0
+#if 1
     // Split ball
     if(_input.wasPressed(goblib::m5s::FaceGB::Button::Start))
     {
