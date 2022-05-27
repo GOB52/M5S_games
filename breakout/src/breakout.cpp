@@ -163,18 +163,17 @@ void Ball::launch()
     if(_launch) { return; }
     _launch = true;
 
-    printf("%s::(%f,%f) %f\n", __func__, _v.x(), _v.y(), _v.length());
     if(_v.length() == 0.0f)
     {
         goblib::m5s::arduino_engine re;
         std::uniform_int_distribution<> distx(0, goblib::size(refPaddleTable) - 1);
         auto i = distx(re);
-        printf("[%d] %f:%f\n", i, refPaddleTable[i], std::cos(refPaddleTable[i]));
+        PRINTF("[%d] %f:%f\n", i, refPaddleTable[i], std::cos(refPaddleTable[i]));
 
         _v.move(std::cos(refPaddleTable[ i ]), -1.0f);
         _v.normalize();
     }
-    printf("BALL:launch %d,%f,%f\n", _velocity, _v.x(), _v.y());
+    PRINTF("BALL:launch %d,%f,%f\n", _velocity, _v.x(), _v.y());
 }
 
 void Ball::render(goblib::lgfx::GSprite* s, const std::int_fast16_t yoffset)
