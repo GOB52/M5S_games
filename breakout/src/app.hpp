@@ -13,13 +13,13 @@
 #include <gob_singleton.hpp>
 #include <lgfx/gob_lgfx.hpp>
 #include <gob_m5s_faces.hpp>
-#include <array>
 
 #ifdef LGFX_USE_V1
-#include <lgfx/v1_autodetect/LGFX_AutoDetect_ESP32.hpp>
+#include <lgfx/v1_autodetect/common.hpp>
 #else
-class LGFX;
+#include <LovyanGFX.hpp>
 #endif
+#include <vector>
 
 using AppClock = std::chrono::steady_clock;
 #define MAX_FPS (30)
