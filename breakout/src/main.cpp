@@ -16,7 +16,7 @@ void setup()
     M5.begin(false /* LCD */, false /* SD */ , true /* Serial */);
     Wire.begin();
     while(!Serial){ delay(10); }
-
+    
     Breakout::instance().setup(&lcd);
 }
     

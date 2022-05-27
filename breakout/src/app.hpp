@@ -7,6 +7,7 @@
 
 #include "debug.hpp"
 #include "typedef.hpp"
+#include "breakout.hpp"
 #include <gob_macro.hpp>
 #include <gob_app.hpp>
 #include <gob_singleton.hpp>
@@ -20,16 +21,8 @@
 class LGFX;
 #endif
 
-
-
-
 using AppClock = std::chrono::steady_clock;
-
-// Maximum frane per second (best effort)
 #define MAX_FPS (30)
-
-class Ball;
-
 
 class Breakout : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singleton<Breakout>
 {
@@ -45,6 +38,8 @@ class Breakout : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singlet
     virtual void update(float delta) override;
     virtual void render() override;
 
+    void addScore(std::uint32_t pts) { _score += pts; }
+    
   protected:
     friend class goblib::Singleton<Breakout>;
     Breakout();
@@ -57,14 +52,18 @@ class Breakout : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singlet
         while(AppClock::now() < abs_time){ taskYIELD(); }
     }
 
-  private:
-    enum BallType { BALL_TYPE_1, BALL_TYPE_2, BALL_TYPE_3 };
+    void phaseStart();
+    void phaseGame();
+    void phaseClear();
+    void phaseMiss();
 
-#ifdef BEHAVIOR_TEST
-    void testBehavior(const BallType type, const std::int32_t i);
-    Ball* createBall(const BallType type, const std::int16_t x, const std::int16_t y, const Vec2& v, const float vel);
-#endif
+    void renderStart(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+    void renderGame(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+    void renderClear(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+    void renderMiss(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
 
+    void rewindBall();
+    
   private:
     LGFX* _lcd;;
     goblib::lgfx::GSprite _sprites[2];
@@ -72,11 +71,20 @@ class Breakout : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singlet
     std::uint32_t _lcd_width, _lcd_height;
     bool _flip;
 
-#ifdef BEHAVIOR_TEST
-    std::int32_t _cnt;
-#endif
-    
+    //
+    enum Phase { Start, Game, Clear, Miss };
+    Phase _phase;
 
+    std::vector<Ball> _balls;
+    Paddle _paddle;
+    Bricks _bricks;
+
+    std::uint32_t _score;
+    std::int8_t _remain;
+    std::int8_t _stage;
+    std::int32_t _cnt;
+
+    constexpr static std::int8_t REMAIN = 3;
 };
 
 #endif

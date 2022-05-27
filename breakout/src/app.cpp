@@ -1,4 +1,4 @@
-/*!OA
+/*!
   Breakout
   @brief Simple breakout game
 */
@@ -7,96 +7,142 @@
 #undef min
 #endif
 #include <LovyanGFX.hpp>
-#include "app.hpp"
 #include "breakout.hpp"
+#include "app.hpp"
 
 namespace
 {
 int_fast16_t sprite_height;
-Paddle paddle;
-std::vector<Ball*> balls;
-Bricks bricks =
+
+using StageData = std::vector<std::uint8_t>;
+std::vector<StageData> stage =
 {
 #if 0
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,
-    0,1,0,1,0,1,0,1,0,1,0,1,0,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,
-    0,1,0,1,0,1,0,1,0,1,0,1,0,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,
-    0,1,0,1,0,1,0,1,0,1,0,1,0,
-    1,0,1,0,1,0,1,0,1,0,1,0,1,
-    0,1,0,1,0,1,0,1,0,1,0,1,0,
+    {
+        1,0,0,0,0,0,0,0,0,0,0,0,1,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        9,0,9,0,9,0,9,0,9,0,9,0,9,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,9,0,9,0,9,0,9,0,9,0,9,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        9,9,0,0,9,9,0,0,9,0,9,0,9,
+        9,0,0,0,0,9,0,0,9,0,9,0,9,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        9,9,0,0,9,9,0,0,9,9,0,9,9,
+    },
 #endif
-
+    {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,
+        2,2,2,2,2,2,2,2,2,2,2,2,2,
+        3,3,3,3,3,3,3,3,3,3,3,3,3,
+        4,4,4,4,4,4,4,4,4,4,4,4,4,
+        5,5,5,5,5,5,5,5,5,5,5,5,5,
+    },
+    {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        2,0,0,0,0,0,0,0,0,0,0,0,0,
+        2,3,0,0,0,0,0,0,0,0,0,0,0,
+        2,3,4,0,0,0,0,0,0,0,0,0,0,
+        2,3,4,5,0,0,0,0,0,0,0,0,0,
+        2,3,4,5,6,0,0,0,0,0,0,0,0,
+        2,3,4,5,6,7,0,0,0,0,0,0,0,
+        2,3,4,5,6,7,8,0,0,0,0,0,0,
+        2,3,4,5,6,7,8,2,0,0,0,0,0,
+        2,3,4,5,6,7,8,2,3,0,0,0,0,
+        2,3,4,5,6,7,8,2,3,4,0,0,0,
+        2,3,4,5,6,7,8,2,3,4,5,0,0,
+        2,3,4,5,6,7,8,2,3,4,5,6,0,
+        1,1,1,1,1,1,1,1,1,1,1,1,7,
+    },
+    {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        2,2,2,2,2,2,2,2,2,2,2,2,2,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        2,2,2,9,9,9,9,9,9,9,9,9,9,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        3,3,3,3,3,3,3,3,3,3,3,3,3,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        9,9,9,9,9,9,9,9,9,9,3,3,3,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        4,4,4,4,4,4,4,4,4,4,4,4,4,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        4,4,4,9,9,9,9,9,9,9,9,9,9,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        5,5,5,5,5,5,5,5,5,5,5,5,5,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        9,9,9,9,9,9,9,9,9,9,5,5,5,
+    },
+    {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,2,3,4,1,5,0,6,7,8,2,3,0,
+        0,3,4,1,5,4,0,7,8,2,3,1,0,
+        0,4,1,5,4,6,0,8,2,3,1,5,0,
+        0,1,5,4,6,7,0,2,3,1,5,6,0,
+        0,5,4,6,7,8,0,3,1,5,6,7,0,
+        0,4,6,7,8,2,0,1,5,6,7,8,0,
+        0,6,7,8,2,5,0,5,6,7,8,2,0,
+        0,7,8,2,5,1,0,6,7,8,2,3,0,
+        0,8,2,5,1,6,0,7,8,2,3,4,0,
+        0,2,5,1,6,7,0,8,2,3,4,1,0,
+        0,5,1,6,7,8,0,2,3,4,1,5,0,
+        0,1,6,7,8,2,0,3,4,1,5,6,0,
+        0,6,7,8,2,3,0,4,1,5,6,7,0,
+        0,7,8,2,3,4,0,1,5,6,7,8,0,
+    },
 #if 0
-    0,0,0,7,0,0,0,0,0,7,0,0,0,
-    0,0,0,7,0,0,0,0,0,7,0,0,0,
-    0,0,0,0,7,0,0,0,7,0,0,0,0,
-    0,0,0,0,7,0,0,0,7,0,0,0,0, 
-    0,0,0,1,1,1,1,1,1,1,0,0,0,
-    0,0,0,1,1,1,1,1,1,1,0,0,0,
-    0,0,1,1,5,1,1,1,5,1,1,0,0,
-    0,0,1,1,5,1,1,1,5,1,1,0,0,
-    0,1,1,1,1,1,1,1,1,1,1,1,0,
-    0,1,1,1,1,1,1,1,1,1,1,1,0,
-    0,1,1,1,1,1,1,1,1,1,1,1,0,
-    0,1,0,1,1,1,1,1,1,1,0,1,0,
-    0,1,0,1,0,0,0,0,0,1,0,1,0,
-    0,1,0,1,0,0,0,0,0,1,0,1,0,
-    0,0,0,0,1,1,0,1,1,0,0,0,0,
-    0,0,0,0,1,1,0,1,1,0,0,0,0,
-
+    {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,7,0,0,0,0,0,7,0,0,0,
+        0,0,0,7,0,0,0,0,0,7,0,0,0,
+        0,0,0,0,7,0,0,0,7,0,0,0,0,
+        0,0,0,0,7,0,0,0,7,0,0,0,0, 
+        0,0,0,1,1,1,1,1,1,1,0,0,0,
+        0,0,0,1,1,1,1,1,1,1,0,0,0,
+        0,0,1,1,5,1,1,1,5,1,1,0,0,
+        0,0,1,1,5,1,1,1,5,1,1,0,0,
+        0,1,1,1,1,1,1,1,1,1,1,1,0,
+        0,1,1,1,1,1,1,1,1,1,1,1,0,
+        0,1,1,1,1,1,1,1,1,1,1,1,0,
+        0,1,0,1,1,1,1,1,1,1,0,1,0,
+        0,1,0,1,0,0,0,0,0,1,0,1,0,
+        0,1,0,1,0,0,0,0,0,1,0,1,0,
+        0,0,0,0,1,1,0,1,1,0,0,0,0,
+        0,0,0,0,1,1,0,1,1,0,0,0,0,
+    },
 #endif
-
-#if 0
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,9,9,9,9,9,9,9,9,9,9,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    9,9,9,9,9,9,9,9,9,9,1,1,1,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,9,9,9,9,9,9,9,9,9,9,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    1,1,1,1,1,1,1,1,1,1,1,1,1,
-    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    9,9,9,9,9,9,9,9,9,9,1,1,1,
-
-#endif
-#if 1    
-    //    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    //    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    //    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    //    0,0,0,0,0,0,0,0,0,0,0,0,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    //    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    //    0,1,1,1,1,1,0,1,1,1,1,1,0,
-    //    0,1,1,1,1,1,0,1,1,1,1,1,0,
-#endif
+    {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,9,0,9,0,9,0,9,0,0,0,
+        0,9,0,0,0,0,0,0,0,0,0,9,0,
+        0,9,9,0,9,0,0,0,9,0,9,9,0,
+        0,0,0,0,0,0,2,0,0,0,0,0,0,
+        0,9,0,0,0,9,3,9,0,0,0,9,0,
+        0,0,0,9,0,0,4,0,0,9,0,0,0,
+        0,0,0,0,0,0,5,0,0,0,0,0,0,
+        0,0,0,9,0,0,6,0,0,9,0,0,0,
+        0,9,0,0,0,9,7,9,0,0,0,9,0,
+        0,0,0,0,0,0,1,0,0,0,0,0,0,
+        0,9,9,0,9,0,0,0,9,0,9,9,0,
+        0,9,0,0,0,0,0,0,0,0,0,9,0,
+        0,0,0,9,0,9,0,9,0,9,0,0,0,
+    },
 };
 
-
-
-
-
-constexpr  std::uint16_t CLR_1 = 0xF800;
-constexpr  std::uint16_t CLR_2 = 0x07E0;
-constexpr  std::uint16_t CLR_3 = 0x001F;
+constexpr  std::uint16_t BALL_CLR = 0x07E0;
 //
 }
 
@@ -110,29 +156,17 @@ Breakout::Breakout()
         , _lcd_width(0)
         , _lcd_height(0)
         , _flip(false)
-#ifdef BEHAVIOR_TEST
+        , _phase(Phase::Start)
+        , _balls()
+        , _paddle()
+        , _bricks()
+        , _score()
+        , _remain(REMAIN)
+        , _stage(0)
         , _cnt(0)
-#endif
-
 {
-    //    balls.emplace_back(new Ball_1(Paddle::INITIAL_LEFT + Paddle::WIDTH/2, Paddle::INITIAL_TOP - Ball::RADIUS, 0xFFFF));
-
-    //    balls.emplace_back(new Ball_1(Paddle::INITIAL_LEFT + Paddle::WIDTH/2, Paddle::INITIAL_TOP - Ball::RADIUS, Vec2(1.0f,1.0f), 8.0f, CLR_1));
-    balls.emplace_back(new Ball_2(Paddle::INITIAL_LEFT + Paddle::WIDTH/2, Paddle::INITIAL_TOP - Ball::RADIUS * 2, Vec2(1.0f,1.0f), 4.0f, CLR_2));
-    //    balls.emplace_back(new Ball_3(Paddle::INITIAL_LEFT + Paddle::WIDTH/2, Paddle::INITIAL_TOP - Ball::RADIUS, Vec2(1.0f,1.0f), 8.0f, CLR_3));
-
-    
-    //    balls.emplace_back(new Ball_2(FIELD_HIT_RECT.right() - 1, Paddle::INITIAL_TOP - Ball::RADIUS * 4, Vec2(0.0f,1.0f), 1.0f, CLR_2));
-
-
-    
-    for(int i=0;i<0;++i)
-    {
-        balls.emplace_back(new Ball_2(Paddle::INITIAL_LEFT + Paddle::WIDTH/2, Paddle::INITIAL_TOP - Ball::RADIUS, CLR_2));
-    }
-
-
-    
+    rewindBall();
+    _bricks.set(stage[_stage].begin(), stage[_stage].end());
 }
 
 void Breakout::setup(LGFX* lcd)
@@ -151,9 +185,9 @@ void Breakout::setup(LGFX* lcd)
     _lcd_height = _lcd->height();
 
     uint32_t div = 2;
+    sprite_height = (_lcd_height + div - 1) / div;
     for (;;)
     {
-        sprite_height = (_lcd_height + div - 1) / div;
         bool fail = false;
         for (std::uint32_t i = 0; !fail && i < 2; ++i)
         {
@@ -178,6 +212,12 @@ void Breakout::setup(LGFX* lcd)
            FIELD_HIT_RECT.width(), FIELD_HIT_RECT.height());
 }
 
+void Breakout::rewindBall()
+{
+    _balls.clear();
+    _balls.emplace_back(Paddle::INITIAL_LEFT + Paddle::WIDTH/2, Paddle::INITIAL_TOP - Ball::RADIUS * 2, BALL_CLR);
+}
+
 void Breakout::fixedUpdate()
 {
     /* nop */
@@ -185,59 +225,103 @@ void Breakout::fixedUpdate()
 
 void Breakout::update(float delta)
 {
+    switch(_phase)
+    {
+    case Phase::Start: phaseStart(); break;
+    case Phase::Game:  phaseGame();  break;
+    case Phase::Clear: phaseClear(); break;
+    case Phase::Miss:  phaseMiss();  break;
+    }
+    ++_cnt;
+}
+
+void Breakout::phaseStart()
+{
+    if(_cnt > MAX_FPS * 3) { _cnt = 0; _phase = Phase::Game; }
+}
+
+void Breakout::phaseGame()
+{
+    if(_bricks.isClear())
+    {
+        _cnt = 0;
+        _phase = Phase::Clear;
+        return;
+    }
+
+    auto it = std::remove_if(_balls.begin(), _balls.end(),
+                             [](Ball& b)
+                             {
+                                 return b.center().y() > FIELD_HIT_RECT.bottom();
+                             });
+    _balls.erase(it, _balls.end());
+    if(_balls.empty())
+    {
+        --_remain;
+        _cnt = 0;
+        _phase = Phase::Miss;
+        return;
+    }
+    
     M5.update();
     _input.pump();
 
-    //    if(!_input.isPressed(goblib::m5s::FaceGB::Button::A)) { return; }
-
-    
     // 0x01:left 0x02:rapid 0x04:right
     std::uint8_t mbit = (M5.BtnA.isPressed()) | (M5.BtnB.isPressed() << 1) | (M5.BtnC.isPressed() << 2) |
                         (_input.isPressed(goblib::m5s::FaceGB::Button::Left) ? 1 : 0) |
                         (_input.isPressed(goblib::m5s::FaceGB::Button::Right) ? 4 : 0) |
                         (_input.isPressed(goblib::m5s::FaceGB::Button::B) ? 2 : 0);
 
-#ifdef BEHAVIOR_TEST
-    if(M5.BtnA.pressedFor(1000))
-    {
-        for(auto& e : balls) { delete e; }
-        balls.clear();
-        paddle.rewind();
-        _cnt = 0;
-    }
-    else
-    {
-        if(M5.BtnA.wasPressed()) { testBehavior(BallType::BALL_TYPE_1, _cnt++); }
-        if(M5.BtnB.wasPressed()) { testBehavior(BallType::BALL_TYPE_2, _cnt++); }
-        if(M5.BtnC.wasPressed()) { testBehavior(BallType::BALL_TYPE_3, _cnt++); }
-    }
-    return;
-#endif
-
     if(mbit & 0x02)
     {
-        for(auto& e : balls)
+        for(auto& e : _balls)
         {
-            if(e->ready()) { e->launch(); }
+            if(e.ready()) { e.launch(); }
         }
     }
 
     std::int16_t ox = 0;
     if(mbit & 0x01) { ox -= 4 + 4 * ((mbit & 0x02) != 0); }
     if(mbit & 0x04) { ox += 4 + 4 * ((mbit & 0x02) != 0); }
-#if 1
-    paddle.offset(ox, 0);
-#else
-    static int oox = 4;
-    if(paddle.rect().left() <= FIELD_RECT.left()) { oox = -oox; }
-    if(paddle.rect().right() >= FIELD_RECT.right() - 1) { oox = -oox; }
-    //    printf("%d:%d %d\n", paddle.rect().right(), FIELD_RECT.right(), oox);
-    paddle.offset(oox, 0);
-#endif
+    _paddle.offset(ox, 0);
 
-    for(auto& e: balls)
+    for(auto& e: _balls)
     {
-        e->update(paddle, bricks);
+        e.update(_paddle, _bricks);
+    }
+
+#if 0
+    // Split ball
+    if(_input.wasPressed(goblib::m5s::FaceGB::Button::Start))
+    {
+        _balls.emplace_back(Paddle::INITIAL_LEFT + Paddle::WIDTH/2, Paddle::INITIAL_TOP - Ball::RADIUS * 2, Vec2(1.0f,-1.0f), 4.0f, BALL_CLR);
+        _balls.back().launch();
+    }
+#endif
+}
+
+void Breakout::phaseClear()
+{
+    if(_cnt > MAX_FPS * 3)
+    {
+        _cnt = 0;
+        _paddle.rewind();
+        rewindBall();
+        _stage = (_stage + 1) % stage.size();
+        _bricks.set(stage[_stage].begin(), stage[_stage].end());
+        
+        _phase = Phase::Start;
+    }
+}
+
+void Breakout::phaseMiss()
+{
+    if(_remain > 0 && _cnt > MAX_FPS * 3)
+    {
+        _cnt = 0;
+        _phase = Phase::Game;
+        _paddle.rewind();
+        rewindBall();
     }
 }
 
@@ -252,141 +336,49 @@ void Breakout::render()
 
         s->drawRect(FIELD_RECT.left(), FIELD_RECT.top() - y,
                     FIELD_RECT.width(), FIELD_RECT.height(), 0xFFFF);
+#ifdef DEBUG_RENDER
         s->drawRect(FIELD_HIT_RECT.left(), FIELD_HIT_RECT.top() - y,
                     FIELD_HIT_RECT.width(), FIELD_HIT_RECT.height(), 0xF800);
-
-        paddle.render(s, y);
-        bricks.render(s, y);
-        for(auto& e : balls)
+#endif
+        _bricks.render(s, y);
+        _paddle.render(s, y);
+        for(auto& e : _balls) { e.render(s, y); }
+        
+        switch(_phase)
         {
-            e->render(s, y);
+        case Phase::Start: renderStart(s, y); break;
+        case Phase::Game:  renderGame(s, y);  break;
+        case Phase::Clear: renderClear(s, y); break;
+        case Phase::Miss:  renderMiss(s, y);  break;
         }
-
         if (y == 0)
         {
             s->setCursor(0, 0);
-#ifdef BEHAVIOR_TEST
-            s->printf("fps:%2.2f balls:%zu cnt:%d", fps(), balls.size(), _cnt);
-#else
-            s->printf("fps:%2.2f", fps());
-#endif
+            s->printf("fps:%2.2f  SCORE: %08u REMAIN:%d", fps(), _score, _remain);
         }
         _sprites[_flip].pushSprite(_lcd, 0, y);
     }
     _lcd->display();
 }
 
-
-#ifdef BEHAVIOR_TEST
-Ball* Breakout::createBall(const BallType type, const std::int16_t x, const std::int16_t y, const Vec2& v, const float vel)
+void Breakout::renderStart(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
 {
-    constexpr static std::uint16_t clr[] = { CLR_1, CLR_2, CLR3 };
-    switch(type)
-    {
-    case BallType::BALL_TYPE_2:
-        return new Ball_2(x, y, v, vel, clr[type]);
-    case BallType::BALL_TYPE_3:
-        return new Ball_3(x, y, v, vel, clr[type]);
-        //    case BallType::BALL_TYPE_1:
-    default:
-        return new Ball_1(x, y, v, vel, clr[type]);
-    }
+    s->setCursor(80, 200 - yoffset);
+    s->printf("STAGE %d READY?", _stage + 1);
 }
 
-void Breakout::testBehavior(const BallType type, const std::int32_t idx)
+void Breakout::renderGame(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
 {
-    paddle.rewind();
-    auto pr = paddle.hitRect();
-
-    for(auto& e : balls) { delete e; }
-    balls.clear();
-    
-    switch(idx)
-    {
-    case 0:
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 10, FIELD_HIT_RECT.top() + 10, Vec2(-1.0f, -0.25f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 10, FIELD_HIT_RECT.top() + 10, Vec2(-1.0f, -0.5f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 10, FIELD_HIT_RECT.top() + 10, Vec2(-1.0f, -0.75f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 10, FIELD_HIT_RECT.top() + 10, Vec2(-1.0f, -1.0f), 40.0f));
-        break;
-    case 1:    
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 10, FIELD_HIT_RECT.top() + 10, Vec2( 1.0f, -0.25f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 10, FIELD_HIT_RECT.top() + 10, Vec2( 1.0f, -0.5f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 10, FIELD_HIT_RECT.top() + 10, Vec2( 1.0f, -0.75f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 10, FIELD_HIT_RECT.top() + 10, Vec2( 1.0f, -1.0f), 40.0f));
-        break;
-    case 2:
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 10, FIELD_HIT_RECT.bottom() - 10, Vec2(-1.0f, 0.25f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 10, FIELD_HIT_RECT.bottom() - 10, Vec2(-1.0f, 0.5f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 10, FIELD_HIT_RECT.bottom() - 10, Vec2(-1.0f, 0.75f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 10, FIELD_HIT_RECT.bottom() - 10, Vec2(-1.0f, 1.0f), 40.0f));
-        break;
-    case 3:
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 10, FIELD_HIT_RECT.bottom() - 10, Vec2( 1.0f, 0.25f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 10, FIELD_HIT_RECT.bottom() - 10, Vec2( 1.0f, 0.5f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 10, FIELD_HIT_RECT.bottom() - 10, Vec2( 1.0f, 0.75f), 40.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 10, FIELD_HIT_RECT.bottom() - 10, Vec2( 1.0f, 1.0f), 40.0f));
-        break;
-    case 4:
-        // [A} from top,bottom
-        printf("----[A] TB\n");
-        balls.emplace_back(createBall(type, pr.center().x() - 2, pr.top() - 4,    Vec2( 1.0f,  1.0f), 10.0f));
-        balls.emplace_back(createBall(type, pr.center().x() + 2, pr.bottom() + 4, Vec2(-1.0f, -1.0f), 10.0f));
-        break;
-    case 5:
-        // [A] from left,right
-        printf("----[A] LR\n");
-        balls.emplace_back(createBall(type, pr.left() - 2,  pr.center().y() - 4, Vec2( 1.0f,  1.0f), 10.0f));
-        balls.emplace_back(createBall(type, pr.right() + 2, pr.center().y() + 4, Vec2(-1.0f, -1.0f), 10.0f));
-        break;
-    case 6:
-        // [B]
-        printf("----[B]\n");
-        balls.emplace_back(createBall(type, pr.center().x() - 2, pr.top() - 4,    Vec2( 0.1f,  1.0f), 25.0f));
-        balls.emplace_back(createBall(type, pr.center().x() + 2, pr.bottom() + 4, Vec2(-0.1f, -1.0f), 25.0f));
-        break;
-    case 7:
-        // [C]
-        printf("----[C]\n");
-        balls.emplace_back(createBall(type, pr.left() + 4, pr.top() + 4,     Vec2(  1.0f,  0.2f), 12.0f));
-        balls.emplace_back(createBall(type, pr.right() - 4, pr.bottom() - 4, Vec2( -1.0f, -0.2f), 12.0f));
-        break;
-    case 8:
-        // [D]
-        printf("----[D] R\n");
-        paddle.move(FIELD_RECT.right() - paddle.rect().width() - Ball::RADIUS * 4, paddle.rect().top());
-        pr = paddle.hitRect();
-        balls.emplace_back(createBall(type, pr.right() + 2, pr.top() - 2,    Vec2( 1.0f,  0.2f), 20.0f));
-        balls.emplace_back(createBall(type, pr.right() + 2, pr.bottom() + 2, Vec2( 1.0f, -0.2f), 20.0f));
-        break;
-    case 9:
-        // [D]
-        printf("----[D] L\n");
-        paddle.move(FIELD_RECT.left() + Ball::RADIUS * 4, paddle.rect().top());
-        pr = paddle.hitRect();
-        balls.emplace_back(createBall(type, pr.left() - 2, pr.top() - 2,    Vec2(-1.0f,  0.2f), 20.0f));
-        balls.emplace_back(createBall(type, pr.left() - 2, pr.bottom() + 2, Vec2(-1.0f, -0.2f), 20.0f));
-        break;
-    case 10:
-        // [F]
-        printf("---[F] R\n");
-        paddle.offset(300,0);
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 2,  pr.center().y(), Vec2( 1.0f,  0.1f), 10.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.right() - 2,  pr.center().y(), Vec2( 1.0f, -0.1f), 10.0f));
-        break;
-    case 11:
-        // [F]
-        printf("---[F] L\n");
-        paddle.offset(-300,0);
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 2,  pr.center().y(), Vec2(-1.0f,  0.1f), 10.0f));
-        balls.emplace_back(createBall(type, FIELD_HIT_RECT.left() + 2,  pr.center().y(), Vec2(-1.0f, -0.1f), 10.0f));
-        break;
-    }
-
-    for(auto& e : balls)
-    {
-        e->launch();
-        e->update(paddle, bricks);
-    }
 }
-#endif
+
+void Breakout::renderClear(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+{
+    s->setCursor(80, 200 - yoffset);
+    s->printf("STAGE %d CLEAR!", _stage + 1);
+}
+
+void Breakout::renderMiss(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+{
+    s->setCursor(80, 200 - yoffset);
+    s->printf("%s", _remain == 0 ? "GAME OVER!!" : "MISS!");
+}

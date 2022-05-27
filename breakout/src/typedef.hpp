@@ -1,3 +1,8 @@
+/*!
+  Breakout
+  @brief Simple breakout game
+ */
+
 #ifndef BREAKOUT_TYPEDEF_HPP
 #define BREAKOUT_TYPEDEF_HPP
 
