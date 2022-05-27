@@ -13,9 +13,9 @@
 #include <array>
 
 #ifdef LGFX_USE_V1
-#include <lgfx/v1_autodetect/LGFX_AutoDetect_ESP32.hpp>
+#include <lgfx/v1_autodetect/common.hpp>
 #else
-class LGFX;
+#include <LovyanGFX.hpp>
 #endif
 
 using AppClock = std::chrono::steady_clock;
