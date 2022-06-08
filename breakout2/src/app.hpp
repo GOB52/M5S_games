@@ -20,8 +20,9 @@
 #else
 #include <LovyanGFX.hpp>
 #endif
-#include <vector>
 
+#include <vector>
+#include "definition.hpp"
 
 #define USING_DMA_TRANSFER
 
@@ -44,7 +45,7 @@ class Breakout : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singlet
     virtual void render() override;
 
     void addScore(std::uint32_t pts) { _score += pts; }
-    
+
   protected:
     friend class goblib::Singleton<Breakout>;
     Breakout();
@@ -70,6 +71,8 @@ class Breakout : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singlet
     void rewindBall();
 
     void _renderBG(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+
+    void playBgm(BGM bgm);
     
   private:
     LGFX* _lcd;;

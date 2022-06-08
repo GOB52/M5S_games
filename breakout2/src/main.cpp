@@ -11,6 +11,7 @@
 #include <esp_bt.h>
 #include <esp_bt_main.h>
 #include "app.hpp"
+#include "sound.hpp"
 #include <gob_m5s_sd.hpp>
 
 static LGFX lcd;
@@ -32,12 +33,13 @@ void setup()
 
     SdFat& sd = goblib::m5s::SD::instance().sd(); // SdFat のインスタンス
     while(!sd.begin((unsigned)TFCARD_CS_PIN, SD_SCK_MHZ(25))) { delay(10); } // 開始
-    
     auto mem2 = esp_get_free_heap_size();
-    
-    Breakout::instance().setup(&lcd);
 
+    SoundSystem::_lcd = &lcd;
+    SoundSystem::instance().setup();
+    Breakout::instance().setup(&lcd);
     auto mem3 = esp_get_free_heap_size();
+
     printf("Heap available : %u : %u : %u : %u\n", mem0, mem1, mem2, mem3);
 }
     

@@ -5,6 +5,7 @@
 #include <LovyanGFX.hpp>
 #include "breakout.hpp"
 #include "app.hpp"
+#include "sound.hpp"
 #include <gob_math.hpp>
 #include <gob_utility.hpp>
 #include <gob_template_helper.hpp>
@@ -401,10 +402,13 @@ void Ball::_update(Vec2& ov, Vec2& nv, Paddle& paddle, Bricks& bricks)
                 auto radian = std::atan2(std::abs(_v.y()), std::abs(_v.x()));
                 PRINTF(" force change angle : v(%f,%f) %f => ", _v.x(), _v.y(), std::atan2(_v.y(), _v.x()));
 
-                if(radian > goblib::math::deg2rad(45.0f)) { radian -= goblib::math::deg2rad(11.25f); }
-                else { radian += goblib::math::deg2rad(11.25f); }
+                radian += goblib::math::deg2rad((esp_random() & 1) ? 11.25f : -11.25f);
+                if(radian > goblib::math::deg2rad(78.75f))      { radian -= goblib::math::deg2rad(11.25f * 2); }
+                else if(radian < goblib::math::deg2rad(11.25f)) { radian += goblib::math::deg2rad(11.25f * 2); }
+
                 if(std::isless(_v.x(), 0.0f)) { radian = goblib::math::deg2rad(180.0f) - radian; }
                 if(std::isless(_v.y(), 0.0f)) { radian = goblib::math::deg2rad(360.0f) - radian; }
+
                 radian = goblib::math::wrapRad(radian);
                 _v.move(std::cos(radian), std::sin(radian));
                 PRINTF(" v(%f,%f) %f\n", _v.x(), _v.y(), radian);
@@ -458,13 +462,16 @@ void Ball::onHitBrick(const Bricks::Brick& b)
     {
         Breakout::instance().addScore(100);
     }
+    SoundSystem::instance().playSfx(SFX::HitBrick);
 }
 
 void Ball::onHitPaddle()
 {
+    SoundSystem::instance().playSfx(SFX::HitPaddle);
 }
 
 void Ball::onHitWall()
 {
+    SoundSystem::instance().playSfx(SFX::HitPaddle);
     ++_hitCount;
 }
