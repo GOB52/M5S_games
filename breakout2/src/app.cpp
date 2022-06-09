@@ -149,17 +149,11 @@ std::vector<StageData> stage  =
     },
 };
 
-constexpr  std::uint16_t BALL_CLR = 0x07E0;
 bool createFromBitmap(goblib::lgfx::GSprite& sprite,const char* bitmap_path)
 {
     goblib::m5s::File file;
     file.open(bitmap_path, O_READ);
-    
-    if(!file)
-    {
-        PRINTF("%s : Unable to open file %s\n", __func__, bitmap_path);
-        return false;
-    }
+    if(!file) { return false; }
 
     std::size_t len = file.available();
     if(len == 0) { return false; }
@@ -167,16 +161,17 @@ bool createFromBitmap(goblib::lgfx::GSprite& sprite,const char* bitmap_path)
     auto bmp = new std::uint8_t[len];
     if(!bmp) { return false; }
 
-    if(len != file.read(bmp, len)) { return false; }
-    sprite.createFromBmp(bmp, len);
+    bool b = false;
+    if(len == file.read(bmp, len))
+    {
+        sprite.createFromBmp(bmp, len);
+        b = true;
+    }
     delete[] bmp;
-
-    return true;
+    return b;
 }
-
 //
 }
-
 
 Breakout::Breakout()
         : goblib::App<AppClock, MAX_FPS, MAX_FPS>()
@@ -256,7 +251,7 @@ void Breakout::setup(LGFX* lcd)
 void Breakout::rewindBall()
 {
     _balls.clear();
-    _balls.emplace_back(Paddle::INITIAL_LEFT + Paddle::WIDTH/2, Paddle::INITIAL_TOP - Ball::RADIUS * 2, BALL_CLR);
+    _balls.emplace_back(Paddle::INITIAL_LEFT + Paddle::WIDTH/2, Paddle::INITIAL_TOP - Ball::RADIUS * 2);
 }
 
 void Breakout::fixedUpdate()
