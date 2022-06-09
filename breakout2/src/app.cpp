@@ -7,15 +7,22 @@
 #undef min
 #endif
 #include <LovyanGFX.hpp>
-#include "breakout.hpp"
 #include "app.hpp"
+#include "breakout.hpp"
+#include "sound.hpp"
+#include <gob_m5s_sd.hpp>
+#define GOBLIB_ENABLE_PROFILE
+#include <gob_profile.hpp>
+
+extern const ::lgfx::GFXfont myfont_font; // myfont.cpp
 
 namespace
 {
 int_fast16_t sprite_height;
+constexpr std::uint32_t SPLIT = 6;
 
 using StageData = std::vector<std::uint8_t>;
-std::vector<StageData> stage =
+std::vector<StageData> stage  =
 {
 #if 0
     {
@@ -31,8 +38,8 @@ std::vector<StageData> stage =
         0,0,0,0,0,0,0,0,0,0,0,0,0,
         9,9,0,0,9,9,0,0,9,0,9,0,9,
         9,0,0,0,0,9,0,0,9,0,9,0,9,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,
-        9,9,0,0,9,9,0,0,9,9,0,9,9,
+        1,1,1,1,1,1,1,1,1,1,1,1,1,
+        9,9,1,1,9,9,1,1,9,9,1,9,9,
     },
 #endif
     {
@@ -101,7 +108,7 @@ std::vector<StageData> stage =
         0,6,7,8,2,3,0,4,1,5,6,7,0,
         0,7,8,2,3,4,0,1,5,6,7,8,0,
     },
-#if 1
+#if 0
     {
         0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -143,6 +150,30 @@ std::vector<StageData> stage =
 };
 
 constexpr  std::uint16_t BALL_CLR = 0x07E0;
+bool createFromBitmap(goblib::lgfx::GSprite& sprite,const char* bitmap_path)
+{
+    goblib::m5s::File file;
+    file.open(bitmap_path, O_READ);
+    
+    if(!file)
+    {
+        PRINTF("%s : Unable to open file %s\n", __func__, bitmap_path);
+        return false;
+    }
+
+    std::size_t len = file.available();
+    if(len == 0) { return false; }
+
+    auto bmp = new std::uint8_t[len];
+    if(!bmp) { return false; }
+
+    if(len != file.read(bmp, len)) { return false; }
+    sprite.createFromBmp(bmp, len);
+    delete[] bmp;
+
+    return true;
+}
+
 //
 }
 
@@ -152,14 +183,15 @@ Breakout::Breakout()
         , goblib::Singleton<Breakout>()
         , _lcd(nullptr)
         , _sprites{}
+        , _image()
         , _input()
         , _lcd_width(0)
         , _lcd_height(0)
         , _flip(false)
         , _phase(Phase::Start)
         , _balls()
-        , _paddle()
-        , _bricks()
+        , _paddle(_image)
+        , _bricks(_image)
         , _score()
         , _remain(REMAIN)
         , _stage(0)
@@ -184,32 +216,41 @@ void Breakout::setup(LGFX* lcd)
     _lcd_width = _lcd->width();
     _lcd_height = _lcd->height();
 
-    uint32_t div = 2;
-    sprite_height = (_lcd_height + div - 1) / div;
+    sprite_height = (_lcd_height + SPLIT - 1) / SPLIT;
+    bool fail = false;
     for (;;)
     {
-        bool fail = false;
         for (std::uint32_t i = 0; !fail && i < 2; ++i)
         {
             _sprites[i].setColorDepth(_lcd->getColorDepth());
-            _sprites[i].setFont(&fonts::Font2);
+            _sprites[i].setFont(&myfont_font); // apply myfont
             _sprites[i].setTextColor(0xFFFFFFU);
             fail = !_sprites[i].createSprite(_lcd_width, sprite_height);
+            _sprites[i].setAddrWindow(0, 0, _lcd_width, sprite_height); // 
         }
         if (!fail) break;
         for (std::uint32_t i = 0; i < 2; ++i)
         {
             _sprites[i].deleteSprite();
         }
-        ++div;
     }
-    _lcd->startWrite();
-
-    _input.setup();
+    assert(!fail && "Failed create sprute");
 
     PRINTF("FIELD HIT (%d,%d) - (%d,%d)  %d,%d\n",
            FIELD_HIT_RECT.left(), FIELD_HIT_RECT.top(), FIELD_HIT_RECT.right(), FIELD_HIT_RECT.bottom(),
            FIELD_HIT_RECT.width(), FIELD_HIT_RECT.height());
+
+    // load bitmap resource from SD
+    //    while(SoundSystem::_using_dma) { delay(1); }
+    bool b = createFromBitmap(_image, "/res/bo2/bo2.bmp");
+    assert(b && "Fatal error");
+    Ball::_sprite = &_image;
+
+    _lcd->setAddrWindow(0, 0, _lcd->width(), _lcd->height());
+    _lcd->startWrite();
+    _input.setup();
+
+    playBgm(BGM::StartGame);
 }
 
 void Breakout::rewindBall()
@@ -220,7 +261,6 @@ void Breakout::rewindBall()
 
 void Breakout::fixedUpdate()
 {
-    /* nop */
 }
 
 void Breakout::update(float delta)
@@ -237,7 +277,12 @@ void Breakout::update(float delta)
 
 void Breakout::phaseStart()
 {
-    if(_cnt > MAX_FPS * 3) { _cnt = 0; _phase = Phase::Game; }
+    if(_cnt > MAX_FPS * 3)
+    {
+        _cnt = 0;
+        _phase = Phase::Game;
+        playBgm(BGM::Bgm1);
+    }
 }
 
 void Breakout::phaseGame()
@@ -246,9 +291,11 @@ void Breakout::phaseGame()
     {
         _cnt = 0;
         _phase = Phase::Clear;
+        playBgm(BGM::ClearGame);
         return;
     }
-
+    _bricks.pump();
+    
     auto it = std::remove_if(_balls.begin(), _balls.end(),
                              [](Ball& b)
                              {
@@ -260,6 +307,7 @@ void Breakout::phaseGame()
         --_remain;
         _cnt = 0;
         _phase = Phase::Miss;
+        playBgm(BGM::Miss);
         return;
     }
     
@@ -290,7 +338,7 @@ void Breakout::phaseGame()
         e.update(_paddle, _bricks);
     }
 
-#if 1
+#if 0
     // Split ball
     if(_input.wasPressed(goblib::m5s::FaceGB::Button::Start))
     {
@@ -302,7 +350,7 @@ void Breakout::phaseGame()
 
 void Breakout::phaseClear()
 {
-    if(_cnt > MAX_FPS * 3)
+    if(_cnt > MAX_FPS * 5)
     {
         _cnt = 0;
         _paddle.rewind();
@@ -311,6 +359,7 @@ void Breakout::phaseClear()
         _bricks.set(stage[_stage].begin(), stage[_stage].end());
         
         _phase = Phase::Start;
+        playBgm(BGM::StartGame);
     }
 }
 
@@ -320,6 +369,7 @@ void Breakout::phaseMiss()
     {
         _cnt = 0;
         _phase = Phase::Game;
+        playBgm(BGM::Bgm1);
         _paddle.rewind();
         rewindBall();
     }
@@ -327,15 +377,17 @@ void Breakout::phaseMiss()
 
 void Breakout::render()
 {
-    for (int_fast16_t y = 0; y < _lcd_height; y += sprite_height)
+    const std::size_t tlen = _lcd->width() * sprite_height;
+    std::int_fast16_t y = 0;
+
+    for(std::int_fast16_t i = 0; i < SPLIT; ++i)
     {
         _flip = !_flip;
         goblib::lgfx::GSprite* s = &_sprites[_flip];
 
         s->clear();
 
-        s->drawRect(FIELD_RECT.left(), FIELD_RECT.top() - y,
-                    FIELD_RECT.width(), FIELD_RECT.height(), 0xFFFF);
+        _renderBG(s, y);
 #ifdef DEBUG_RENDER
         s->drawRect(FIELD_HIT_RECT.left(), FIELD_HIT_RECT.top() - y,
                     FIELD_HIT_RECT.width(), FIELD_HIT_RECT.height(), 0xF800);
@@ -354,11 +406,14 @@ void Breakout::render()
         if (y == 0)
         {
             s->setCursor(0, 0);
-            s->printf("fps:%2.2f  SCORE: %08u REMAIN:%d", fps(), _score, _remain);
+            s->printf("FPS:%2.2f  SCORE: %08u REMAIN:%d", fps(), _score, _remain);
+            _lcd->endWrite(); // Release DMA BUS
+            SoundSystem::instance().pump(); // Access SD (using DMA BUS for access)
+            _lcd->startWrite(); // Occupy DMA BUS for LCD
         }
-        _sprites[_flip].pushSprite(_lcd, 0, y);
+        _lcd->pushPixelsDMA(static_cast<::lgfx::swap565_t*>(s->getBuffer()), tlen);
+        y += sprite_height;
     }
-    _lcd->display();
 }
 
 void Breakout::renderStart(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
@@ -381,4 +436,38 @@ void Breakout::renderMiss(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
 {
     s->setCursor(80, 200 - yoffset);
     s->printf("%s", _remain == 0 ? "GAME OVER!!" : "MISS!");
+}
+
+
+void Breakout::_renderBG(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+{
+    constexpr goblib::lgfx::CellRect lt(0,32, 8,8);
+    constexpr goblib::lgfx::CellRect ct(8,32, 8,8);
+    constexpr goblib::lgfx::CellRect rt(16,32, 8,8);
+    constexpr goblib::lgfx::CellRect lc(0,40, 8,8);
+    constexpr goblib::lgfx::CellRect cc(8,40, 8,8);
+    constexpr goblib::lgfx::CellRect rc(16,40, 8,8);
+
+    _image.pushCell(s, lt, FIELD_RECT.left() - lt.width(), FIELD_RECT.top() - lt.height() - yoffset, 0);
+    _image.pushCell(s, rt, FIELD_RECT.right(), FIELD_RECT.top() - lt.height() - yoffset, 0);
+    for(int x = FIELD_RECT.left(); x < FIELD_RECT.right(); x += ct.width())
+    {
+        _image.pushCell(s, ct, x, FIELD_RECT.top() - lt.height() - yoffset);
+    }
+    for(int y = FIELD_RECT.top(); y < FIELD_RECT.bottom(); y += lc.width())
+    {
+        _image.pushCell(s, lc, FIELD_RECT.left() - 8, y - yoffset);
+        _image.pushCell(s, rc, FIELD_RECT.right(), y - yoffset);
+        for(int x = FIELD_RECT.left(); x < FIELD_RECT.right(); x += ct.width())
+        {
+            _image.pushCell(s, cc, x, y - yoffset);
+        }
+    }
+}
+
+void Breakout::playBgm(BGM bgm)
+{
+    _lcd->endWrite();
+    SoundSystem::instance().playBgm(bgm);
+    _lcd->startWrite();
 }
