@@ -132,12 +132,11 @@ class Ball
   public:
     constexpr static std::int16_t RADIUS = 2;
 
-    Ball(Vec2::pos_type ix, Vec2::pos_type iy, std::uint16_t clr)
+    Ball(Vec2::pos_type ix, Vec2::pos_type iy)
             : _center(ix, iy)
             , _prev(_center)
             , _v()
             , _velocity(4.0f)
-            , _color(clr)
             , _launch(false)
             , _hitCount(0)
             , _framesNotHittingPaddle(0)
@@ -146,8 +145,8 @@ class Ball
 #endif
     {}
 
-    Ball(Vec2::pos_type ix, Vec2::pos_type iy, const Vec2& mv, std::int16_t spd, std::uint16_t clr)
-            : Ball(ix, iy, clr)
+    Ball(Vec2::pos_type ix, Vec2::pos_type iy, const Vec2& mv, std::int16_t spd)
+            : Ball(ix, iy)
     {
         assert(spd > 0);
         _v = mv.normalizeV();
@@ -177,7 +176,6 @@ class Ball
     Vec2 _center, _prev;
     Vec2 _v; // direction vector(normalized)
     std::int16_t _velocity; // moving speed.
-    std::uint16_t _color;
     bool _launch;
     std::uint32_t _hitCount;
     std::uint32_t _framesNotHittingPaddle;
