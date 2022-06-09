@@ -24,9 +24,6 @@
 #include <vector>
 #include "definition.hpp"
 
-#define USING_DMA_TRANSFER
-
-
 using AppClock = std::chrono::steady_clock;
 #define MAX_FPS (30)
 

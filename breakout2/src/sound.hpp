@@ -11,8 +11,6 @@
 #include <gob_m5s_speaker.hpp>
 #include <vector>
 #include "definition.hpp"
-#include <freertos/task.h> // TaskHandle_t
-#include <freertos/semphr.h> // xSemaphoreHandle
 
 #ifdef LGFX_USE_V1
 #include <lgfx/v1_autodetect/common.hpp>
@@ -26,9 +24,6 @@ class SoundSystem : public goblib::Singleton<SoundSystem>
 {
   public:
     constexpr static size_t MAX_CHANNELS = 5; // for Speaker
-
-    static LGFX* _lcd;
-    static std::atomic_bool _using_dma;
     
     // Sfx resource
     class Sfx
@@ -41,7 +36,6 @@ class SoundSystem : public goblib::Singleton<SoundSystem>
             if(filename && filename[0]) { read(filename); }
         }
         Sfx(Sfx&& o) : _buf(std::move(o._buf)), _length(o._length) {}
-
         ~Sfx(){}
 
         bool read(const char* filename);
@@ -67,8 +61,6 @@ class SoundSystem : public goblib::Singleton<SoundSystem>
     void playSfx(SFX sfx);
     void playBgm(BGM bgm);
 
-    static void accessTask(void* arg) { ((SoundSystem*)arg)->_accessTask(); }
-    
   protected:
     friend class goblib::Singleton<SoundSystem>;
     SoundSystem();

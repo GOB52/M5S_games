@@ -35,7 +35,6 @@ void setup()
     while(!sd.begin((unsigned)TFCARD_CS_PIN, SD_SCK_MHZ(25))) { delay(10); } // 開始
     auto mem2 = esp_get_free_heap_size();
 
-    SoundSystem::_lcd = &lcd;
     SoundSystem::instance().setup();
     Breakout::instance().setup(&lcd);
     auto mem3 = esp_get_free_heap_size();

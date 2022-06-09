@@ -19,11 +19,7 @@ extern const ::lgfx::GFXfont myfont_font; // myfont.cpp
 namespace
 {
 int_fast16_t sprite_height;
-#if defined(USING_DMA_TRANSFER)
 constexpr std::uint32_t SPLIT = 6;
-#else
-constexpr std::uint32_t SPLIT = 2;
-#endif
 
 using StageData = std::vector<std::uint8_t>;
 std::vector<StageData> stage  =
@@ -161,7 +157,7 @@ bool createFromBitmap(goblib::lgfx::GSprite& sprite,const char* bitmap_path)
     
     if(!file)
     {
-        printf("%s : Unable to open file %s\n", __func__, bitmap_path);
+        PRINTF("%s : Unable to open file %s\n", __func__, bitmap_path);
         return false;
     }
 
@@ -255,8 +251,6 @@ void Breakout::setup(LGFX* lcd)
     _input.setup();
 
     playBgm(BGM::StartGame);
-
-    printf("LCD BUS SHARED : %d\n", _lcd->isBusShared());
 }
 
 void Breakout::rewindBall()
@@ -267,21 +261,10 @@ void Breakout::rewindBall()
 
 void Breakout::fixedUpdate()
 {
-    //    printf("%s : %d\n", __func__, _lcd->dmaBusy());
-#if 0
-    if(!_lcd->dmaBusy())
-    {
-        printf("dma not busy\n");
-        _lcd->endWrite(); // Release DMA BUS
-        SoundSystem::instance().pump(); // Access SD (using DMA BUS for access)
-        _lcd->startWrite(); // Occupy DMA BUS for LCD
-    }
-#endif
 }
 
 void Breakout::update(float delta)
 {
-    //    printf("%s : %d\n", __func__, _lcd->dmaBusy());    
     switch(_phase)
     {
     case Phase::Start: phaseStart(); break;
@@ -290,7 +273,6 @@ void Breakout::update(float delta)
     case Phase::Miss:  phaseMiss();  break;
     }
     ++_cnt;
-    //    printf("%s : %d\n", __func__, _lcd->dmaBusy());
 }
 
 void Breakout::phaseStart()
@@ -356,7 +338,7 @@ void Breakout::phaseGame()
         e.update(_paddle, _bricks);
     }
 
-#if 1
+#if 0
     // Split ball
     if(_input.wasPressed(goblib::m5s::FaceGB::Button::Start))
     {
@@ -395,14 +377,8 @@ void Breakout::phaseMiss()
 
 void Breakout::render()
 {
-    //    printf("%s : %d\n", __func__, _lcd->dmaBusy());
-    
-#if defined(USING_DMA_TRANSFER)
-    //    GOBLIB_SCOPED_PROFILE_HIGH("render");
     const std::size_t tlen = _lcd->width() * sprite_height;
     std::int_fast16_t y = 0;
-
-    bool done = false;
 
     for(std::int_fast16_t i = 0; i < SPLIT; ++i)
     {
@@ -411,59 +387,7 @@ void Breakout::render()
 
         s->clear();
 
-        //        s->drawRect(FIELD_RECT.left(), FIELD_RECT.top() - y,
-        //                    FIELD_RECT.width(), FIELD_RECT.height(), 0xFFFF);
-
         _renderBG(s, y);
-#ifdef DEBUG_RENDER
-        s->drawRect(FIELD_HIT_RECT.left(), FIELD_HIT_RECT.top() - y,
-                    FIELD_HIT_RECT.width(), FIELD_HIT_RECT.height(), 0xF800);
-#endif
-        _bricks.render(s, y);
-        _paddle.render(s, y);
-        for(auto& e : _balls) { e.render(s, y); }
-        
-        switch(_phase)
-        {
-        case Phase::Start: renderStart(s, y); break;
-        case Phase::Game:  renderGame(s, y);  break;
-        case Phase::Clear: renderClear(s, y); break;
-        case Phase::Miss:  renderMiss(s, y);  break;
-        }
-        //        printf("%s : [%d] %d\n", __func__, i, _lcd->dmaBusy());
-
-        //        while(SoundSystem::_using_dma) { delay(1); }
-        #if 1
-        if(!done && !_lcd->dmaBusy())
-        {
-            done = true;
-            _lcd->endWrite(); // Release DMA BUS
-            SoundSystem::instance().pump(); // Access SD (using DMA BUS for access)
-            _lcd->startWrite(); // Occupy DMA BUS for LCD
-        }
-        #endif
-        
-        if (y == 0)
-        {
-            s->setCursor(0, 0);
-            //s->printf("FPS:%2.2f  SCORE: %08u REMAIN:%d", fps(), _score, _remain);
-            //s->printf("FPS:%2.2f PCM:%zu", fps(), SoundSystem::instance().speaker().getPlayingChannels());
-            s->printf("FPS:%2.2f  DMA:%d", fps(), _lcd->dmaBusy());
-        }
-        _lcd->pushPixelsDMA(static_cast<::lgfx::swap565_t*>(s->getBuffer()), tlen);
-        y += sprite_height;
-    }
-    
-#else
-    for (int_fast16_t y = 0; y < _lcd_height; y += sprite_height)
-    {
-        _flip = !_flip;
-        goblib::lgfx::GSprite* s = &_sprites[_flip];
-
-        s->clear();
-
-        s->drawRect(FIELD_RECT.left(), FIELD_RECT.top() - y,
-                    FIELD_RECT.width(), FIELD_RECT.height(), 0xFFFF);
 #ifdef DEBUG_RENDER
         s->drawRect(FIELD_HIT_RECT.left(), FIELD_HIT_RECT.top() - y,
                     FIELD_HIT_RECT.width(), FIELD_HIT_RECT.height(), 0xF800);
@@ -483,11 +407,13 @@ void Breakout::render()
         {
             s->setCursor(0, 0);
             s->printf("FPS:%2.2f  SCORE: %08u REMAIN:%d", fps(), _score, _remain);
+            _lcd->endWrite(); // Release DMA BUS
+            SoundSystem::instance().pump(); // Access SD (using DMA BUS for access)
+            _lcd->startWrite(); // Occupy DMA BUS for LCD
         }
-        _sprites[_flip].pushSprite(_lcd, 0, y);
+        _lcd->pushPixelsDMA(static_cast<::lgfx::swap565_t*>(s->getBuffer()), tlen);
+        y += sprite_height;
     }
-    _lcd->display();
-#endif
 }
 
 void Breakout::renderStart(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)

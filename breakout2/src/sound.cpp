@@ -3,6 +3,7 @@
   @brief Simple breakout game
 */
 
+#include "debug.hpp"
 #include "sound.hpp"
 #include <gob_m5s_sd.hpp>
 #include <gob_utility.hpp>
@@ -16,13 +17,9 @@ const char* sfxPath[] = { "qq1_1.wav", "qq3_1.wav", };
 //
 }
 
-LGFX* SoundSystem::_lcd = nullptr;
-std::atomic_bool SoundSystem::_using_dma = ATOMIC_VAR_INIT(false);
-
 bool SoundSystem::Sfx::read(const char* filename)
 {
     char path[32];
-
     snprintf(path, sizeof(path), "%s/%s", resourceDir, filename);
     path[sizeof(path) - 1] = '\0';
     
@@ -41,7 +38,6 @@ bool SoundSystem::Sfx::read(const char* filename)
         _buf.release();
         return false;
     }
-
     return true;
 }
 
@@ -62,18 +58,13 @@ void SoundSystem::setup()
         _sfxs.emplace_back(*it);
     }
     _speaker.begin();
-    //    _speaker.setVolume(144);
-    _speaker.setVolume(80);
-
-    xTaskCreatePinnedToCore(accessTask, "access_task", 8192, this, uxTaskPriorityGet(nullptr), &_taskHandle, 1);
+    _speaker.setVolume(144);
 }
 
+// ATTENTION : To be called after releasing the DMA BUS!
 void SoundSystem::pump()
 {
-
     _speaker.pump();
-
-
 }
 
 // ATTENTION : To be called after releasing the DMA BUS!
@@ -82,7 +73,7 @@ void SoundSystem::playBgm(BGM bgm)
     auto idx = goblib::to_underlying(bgm);
     if(idx >= goblib::size(bgmPath))
     {
-        printf("Illegal bgm %u\n", idx);
+        PRINTF("Illegal bgm %u\n", idx);
         return;
     }
 
@@ -96,33 +87,14 @@ void SoundSystem::playBgm(BGM bgm)
     _speaker.play(_bgmStream, (bgm != BGM::Bgm1), _bgmChannel);
 }
 
-// ATTENTION : To be called after releasing the DMA BUS!
 void SoundSystem::playSfx(SFX sfx)
 {
     auto idx = goblib::to_underlying(sfx);
     if(idx >= _sfxs.size())
     {
-        printf("Illegal sfx %u\n", idx);
+        PRINTF("Illegal sfx %u\n", idx);
         return;
     }
     _speaker.playWav(_sfxs[idx].buffer(), ~0U, 1, ++_sfxChannel, true);
     if(_sfxChannel >= MAX_CHANNELS) { _sfxChannel = 1; }
-}
-
-void SoundSystem::_accessTask()
-{
-    printf("%s\n", __PRETTY_FUNCTION__);
-    for(;;)
-    {
-        //        printf("%s \n", __func__);
-        //        ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-        while(_lcd->dmaBusy()) { delay(1); }
-        /*
-        _using_dma = true;
-        _lcd->endWrite();
-        _speaker.pump(); // access to SD card.
-        _lcd->startWrite();
-        _using_dma = false;
-        */
-    }
 }
