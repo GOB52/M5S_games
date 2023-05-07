@@ -4,7 +4,6 @@
 */
 #include "breakout.hpp"
 #include "app.hpp"
-#include <LovyanGFX.hpp>
 #include <lgfx/gob_lgfx.hpp>
 #include <gob_math.hpp>
 #include <gob_utility.hpp>
@@ -84,7 +83,7 @@ void Paddle::offset(std::int16_t ox, std::int16_t oy)
     _hitRect.move(_rect.left() - Ball::RADIUS, _rect.top() - Ball::RADIUS);
 }
 
-void Paddle::render(goblib::lgfx::GSprite* s, const std::int_fast16_t yoffset)
+void Paddle::render(LGFX_Sprite* s, const std::int_fast16_t yoffset)
 {
     s->fillRect(_rect.left(), _rect.top() - yoffset, _rect.width(), _rect.height(), 0xFFFF /* White(255,255,255) */);
 #ifdef DEBUG_RENDER
@@ -104,7 +103,7 @@ Bricks::Brick::Brick(std::int16_t x, std::int16_t y, std::uint8_t type)
     if(type == 1) { _life = 2; }
 }
 
-void Bricks::Brick::render(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+void Bricks::Brick::render(LGFX_Sprite* s, std::int_fast16_t yoffset)
 {
     constexpr static std::uint16_t clr[] = { 0x000, TFT_DARKGREY, TFT_BLUE, TFT_GREEN, TFT_CYAN, TFT_RED, TFT_MAGENTA, TFT_YELLOW, TFT_LIGHTGREY, TFT_OLIVE };
     if(alive())
@@ -139,7 +138,7 @@ Rect2 Bricks::bounding() const
     return Rect2(left, top, right - left + 1, bottom - top + 1);
 }
 
-void Bricks::render(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+void Bricks::render(LGFX_Sprite* s, std::int_fast16_t yoffset)
 {
     for(auto& e : _bricks)
     {
@@ -176,7 +175,7 @@ void Ball::launch()
     PRINTF("BALL:launch %d,%f,%f\n", _velocity, _v.x(), _v.y());
 }
 
-void Ball::render(goblib::lgfx::GSprite* s, const std::int_fast16_t yoffset)
+void Ball::render(LGFX_Sprite* s, const std::int_fast16_t yoffset)
 {
     s->fillCircle(_center.x(), _center.y() - yoffset, RADIUS, _color);
 

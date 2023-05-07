@@ -2,7 +2,6 @@
   Breakout
   @brief Simple breakout game
 */
-#include <LovyanGFX.hpp>
 #include "breakout.hpp"
 #include "app.hpp"
 #include "sound.hpp"
@@ -88,7 +87,7 @@ void Paddle::offset(std::int16_t ox, std::int16_t oy)
     _hitRect.move(_rect.left() - Ball::RADIUS, _rect.top() - Ball::RADIUS);
 }
 
-void Paddle::render(goblib::lgfx::GSprite* s, const std::int_fast16_t yoffset)
+void Paddle::render(LGFX_Sprite* s, const std::int_fast16_t yoffset)
 {
     _sprite->pushCell(s, _cell, _rect.left(), _rect.top() - yoffset, 0);
 
@@ -185,7 +184,7 @@ void Bricks::Brick::pump()
     _animation.pump();
 }
 
-void Bricks::Brick::render(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+void Bricks::Brick::render(LGFX_Sprite* s, std::int_fast16_t yoffset)
 {
     if(alive())
     {
@@ -228,7 +227,7 @@ void Bricks::pump()
     }    
 }
 
-void Bricks::render(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+void Bricks::render(LGFX_Sprite* s, std::int_fast16_t yoffset)
 {
     for(auto& e : _bricks)
     {
@@ -268,7 +267,7 @@ void Ball::launch()
     PRINTF("BALL:launch %d,%f,%f\n", _velocity, _v.x(), _v.y());
 }
 
-void Ball::render(goblib::lgfx::GSprite* s, const std::int_fast16_t yoffset)
+void Ball::render(LGFX_Sprite* s, const std::int_fast16_t yoffset)
 {
     _sprite->pushCell(s, _cell, _center.x() - 4, _center.y() - 4 - yoffset, 0);
     

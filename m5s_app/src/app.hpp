@@ -12,34 +12,32 @@
 #include <lgfx/gob_lgfx.hpp>
 #include <array>
 
-#ifdef LGFX_USE_V1
-#include <lgfx/v1_autodetect/common.hpp>
-#else
-#include <LovyanGFX.hpp>
-#endif
-
 using AppClock = std::chrono::steady_clock;
 
 // Maximum frane per second (best effort)
 #define MAX_FPS (30)
 
-class m5s_app : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singleton<m5s_app>
+class M5S_App : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singleton<M5S_App>
 {
   public:
     // Resolve ambiguities.
-    using PointerType = std::unique_ptr<m5s_app>;
-    using Singleton<m5s_app>::instance;
-    using Singleton<m5s_app>::create;
+    using PointerType = std::unique_ptr<M5S_App>;
+    using Singleton<M5S_App>::instance;
+    using Singleton<M5S_App>::create;
 
+#if __has_include (<M5Unified.h>)
+    void setup(M5GFX* lcd);
+#else
     void setup(LGFX* lcd);
+#endif
     
     virtual void fixedUpdate() override;
     virtual void update(float delta) override;
     virtual void render() override;
 
   protected:
-    friend class goblib::Singleton<m5s_app>;
-    m5s_app();
+    friend class goblib::Singleton<M5S_App>;
+    M5S_App();
 
     virtual void sleep_until(const std::chrono::time_point<AppClock, UpdateDuration>& abs_time) override
     {
@@ -50,9 +48,13 @@ class m5s_app : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singleto
     }
 
   private:
+#if __has_include (<M5Unified.h>)
+    M5GFX* _lcd;
+#else
     LGFX* _lcd;;
+#endif
     std::uint32_t _lcd_width, _lcd_height;
-    goblib::lgfx::GSprite _sprites[2];
+    LGFX_Sprite _sprites[2];
     bool _flip;
 };
 

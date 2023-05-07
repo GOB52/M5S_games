@@ -3,7 +3,15 @@
   @brief Application class sample
   @sa https://github.com/lovyan03/LovyanGFX/tree/master/examples/Sprite/MovingIcons
 */
-#include <LovyanGFX.hpp>
+#if __has_include (<M5Unified.h>)
+# include <SdFat.h>
+# include <M5Unified.h>
+#else
+# include <M5stack.h>
+# ifdef min
+#   undef min
+# endif
+#endif
 #include "app.hpp"
 #include <cassert>
 #include <cstdio>
@@ -75,20 +83,24 @@ constexpr unsigned short closeHeight = 32;
 
 constexpr size_t obj_count = 50;
 obj_info_t objects[obj_count];
-goblib::lgfx::GSprite icons[3];
+LGFX_Sprite icons[3];
 int_fast16_t sprite_height;
 //
 }
 
-m5s_app::m5s_app()
+M5S_App::M5S_App()
         : goblib::App<AppClock, MAX_FPS, MAX_FPS>()
-        , goblib::Singleton<m5s_app>()
+        , goblib::Singleton<M5S_App>()
         , _lcd(nullptr)
         , _sprites{}
         , _flip(false)
         {}
 
-void m5s_app::setup(LGFX* lcd)
+#ifdef M5UNIFIED_VERSION
+void M5S_App::setup(M5GFX* lcd)
+#else
+void M5S_App::setup(LGFX* lcd)
+#endif
 {
     assert(lcd);
     _lcd = lcd;
@@ -152,11 +164,11 @@ void m5s_app::setup(LGFX* lcd)
     _lcd->startWrite();
 }
 
-void m5s_app::fixedUpdate()
+void M5S_App::fixedUpdate()
 {
 }
 
-void m5s_app::update(float delta)
+void M5S_App::update(float delta)
 {
     for (int i = 0; i != obj_count; i++)
     {
@@ -164,7 +176,7 @@ void m5s_app::update(float delta)
     }
 }
 
-void m5s_app::render()
+void M5S_App::render()
 {
     obj_info_t *a;
 
