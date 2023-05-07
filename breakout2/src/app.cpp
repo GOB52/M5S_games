@@ -2,11 +2,15 @@
   Breakout
   @brief Simple breakout game
 */
-#include <M5Stack.h>
-#ifdef min
-#undef min
+#if __has_include (<M5Unified.h>)
+# include <SdFat.h>
+# include <M5Unified.h>
+#else
+# include <M5stack.h>
+# ifdef min
+#   undef min
+# endif
 #endif
-#include <LovyanGFX.hpp>
 #include "app.hpp"
 #include "breakout.hpp"
 #include "sound.hpp"
@@ -108,7 +112,7 @@ std::vector<StageData> stage  =
         0,6,7,8,2,3,0,4,1,5,6,7,0,
         0,7,8,2,3,4,0,1,5,6,7,8,0,
     },
-#if 0
+#if 1
     {
         0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -149,7 +153,7 @@ std::vector<StageData> stage  =
     },
 };
 
-bool createFromBitmap(goblib::lgfx::GSprite& sprite,const char* bitmap_path)
+bool createFromBitmap(LGFX_Sprite& sprite,const char* bitmap_path)
 {
     goblib::m5s::File file;
     file.open(bitmap_path, O_READ);
@@ -196,7 +200,11 @@ Breakout::Breakout()
     _bricks.set(stage[_stage].begin(), stage[_stage].end());
 }
 
+#ifdef M5UNIFIED_VERSION
+void Breakout::setup(M5GFX* lcd)
+#else
 void Breakout::setup(LGFX* lcd)
+#endif
 {
     assert(lcd);
     _lcd = lcd;
@@ -378,7 +386,7 @@ void Breakout::render()
     for(std::int_fast16_t i = 0; i < SPLIT; ++i)
     {
         _flip = !_flip;
-        goblib::lgfx::GSprite* s = &_sprites[_flip];
+        LGFX_Sprite* s = &_sprites[_flip];
 
         s->clear();
 
@@ -411,30 +419,30 @@ void Breakout::render()
     }
 }
 
-void Breakout::renderStart(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+void Breakout::renderStart(LGFX_Sprite* s, std::int_fast16_t yoffset)
 {
     s->setCursor(80, 200 - yoffset);
     s->printf("STAGE %d READY?", _stage + 1);
 }
 
-void Breakout::renderGame(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+void Breakout::renderGame(LGFX_Sprite* s, std::int_fast16_t yoffset)
 {
 }
 
-void Breakout::renderClear(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+void Breakout::renderClear(LGFX_Sprite* s, std::int_fast16_t yoffset)
 {
     s->setCursor(80, 200 - yoffset);
     s->printf("STAGE %d CLEAR!", _stage + 1);
 }
 
-void Breakout::renderMiss(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+void Breakout::renderMiss(LGFX_Sprite* s, std::int_fast16_t yoffset)
 {
     s->setCursor(80, 200 - yoffset);
     s->printf("%s", _remain == 0 ? "GAME OVER!!" : "MISS!");
 }
 
 
-void Breakout::_renderBG(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset)
+void Breakout::_renderBG(LGFX_Sprite* s, std::int_fast16_t yoffset)
 {
     constexpr goblib::lgfx::CellRect lt(0,32, 8,8);
     constexpr goblib::lgfx::CellRect ct(8,32, 8,8);

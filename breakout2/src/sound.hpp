@@ -11,13 +11,6 @@
 #include <gob_m5s_speaker.hpp>
 #include <vector>
 #include "definition.hpp"
-
-#ifdef LGFX_USE_V1
-#include <lgfx/v1_autodetect/common.hpp>
-#else
-#include <LovyanGFX.hpp>
-#endif
-
 #include <atomic>
 
 class SoundSystem : public goblib::Singleton<SoundSystem>

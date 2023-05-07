@@ -35,7 +35,7 @@ class Paddle
 
     void rewind();
     void offset(std::int16_t ox, std::int16_t oy);
-    void render(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+    void render(LGFX_Sprite* s, std::int_fast16_t yoffset);
     
   private:
     Rect2 _rect, _hitRect;
@@ -67,7 +67,7 @@ class Bricks
         void hit();
         
         void pump();
-        void render(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+        void render(LGFX_Sprite* s, std::int_fast16_t yoffset);
 
       private:
         std::uint8_t _type;
@@ -98,7 +98,7 @@ class Bricks
     Rect2 bounding() const;
 
     void pump();
-    void render(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+    void render(LGFX_Sprite* s, std::int_fast16_t yoffset);
 
   private:    
     std::vector<Brick> _bricks;
@@ -161,7 +161,7 @@ class Ball
     
     void launch();
     virtual void update(Paddle& paddle, Bricks& blocks);
-    virtual void render(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+    virtual void render(LGFX_Sprite* s, std::int_fast16_t yoffset);
 
     static goblib::lgfx::CellSprite* _sprite;
     

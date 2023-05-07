@@ -14,13 +14,6 @@
 #include <lgfx/gob_lgfx.hpp>
 #include <lgfx/gob_lgfx_animated_sprite.hpp>
 #include <gob_m5s_faces.hpp>
-
-#ifdef LGFX_USE_V1
-#include <lgfx/v1_autodetect/common.hpp>
-#else
-#include <LovyanGFX.hpp>
-#endif
-
 #include <vector>
 #include "definition.hpp"
 
@@ -35,8 +28,11 @@ class Breakout : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singlet
     using Singleton<Breakout>::instance;
     using Singleton<Breakout>::create;
 
+#if __has_include (<M5Unified.h>)
+    void setup(M5GFX* lcd);
+#else
     void setup(LGFX* lcd);
-    
+#endif    
     virtual void fixedUpdate() override;
     virtual void update(float delta) override;
     virtual void render() override;
@@ -60,20 +56,24 @@ class Breakout : public goblib::App<AppClock, MAX_FPS, MAX_FPS>, goblib::Singlet
     void phaseClear();
     void phaseMiss();
 
-    void renderStart(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
-    void renderGame(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
-    void renderClear(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
-    void renderMiss(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+    void renderStart(LGFX_Sprite* s, std::int_fast16_t yoffset);
+    void renderGame(LGFX_Sprite* s, std::int_fast16_t yoffset);
+    void renderClear(LGFX_Sprite* s, std::int_fast16_t yoffset);
+    void renderMiss(LGFX_Sprite* s, std::int_fast16_t yoffset);
 
     void rewindBall();
 
-    void _renderBG(goblib::lgfx::GSprite* s, std::int_fast16_t yoffset);
+    void _renderBG(LGFX_Sprite* s, std::int_fast16_t yoffset);
 
     void playBgm(BGM bgm);
     
   private:
+#if __has_include (<M5Unified.h>)
+    M5GFX* _lcd;
+#else
     LGFX* _lcd;;
-    goblib::lgfx::GSprite _sprites[2];
+#endif
+    LGFX_Sprite _sprites[2];
     goblib::lgfx::CellSprite _image;
     goblib::m5s::FaceGB _input;
     std::uint32_t _lcd_width, _lcd_height;
